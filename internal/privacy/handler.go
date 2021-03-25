@@ -29,6 +29,12 @@ var Handlers map[int]erebos.Handler
 
 var dataPad, pseudoKey []byte
 
+var employeePrivNetworks map[string]*net.IPNet
+var employeePubNetworks map[string]*net.IPNet
+var companyPubNetworks map[string]*net.IPNet
+var reservedPrivNetworks map[string]*net.IPNet
+var discardNetworks map[string]*net.IPNet
+
 // initialize Handlers map
 func init() {
 	Handlers = make(map[int]erebos.Handler)
@@ -37,6 +43,8 @@ func init() {
 	dataPad, _ = hex.DecodeString(os.Getenv(`PRIVACY_DATAPAD`))
 	// BUG: pseudokey does not rotate
 	pseudoKey, _ = hex.DecodeString(os.Getenv(`PRIVACY_DAILY_KEY`))
+
+	buildNetworkMaps()
 }
 
 // Dispatch implements erebos.Dispatcher
@@ -58,6 +66,63 @@ func Dispatch(msg erebos.Transport) error {
 
 	Handlers[int(handler.Int64())].InputChannel() <- &msg
 	return nil
+}
+
+func buildNetworkMaps() {
+	cfgPath := os.Getenv(`PRIVACY_NETWORKFILE_PATH`)
+
+	employeePrivNetworks = map[string]*net.IPNet{}
+	employeePubNetworks = map[string]*net.IPNet{}
+	companyPubNetworks = map[string]*net.IPNet{}
+	reservedPrivNetworks = map[string]*net.IPNet{}
+	discardNetworks = map[string]*net.IPNet{}
+
+	for _, fname := range []string{
+		`company-public.txt`,
+		`discard.txt`,
+		`employee-private.txt`,
+		`employee-public.txt`,
+		`reserved.txt`,
+	} {
+		file, err := os.Open(filepath.Join(cfgPath, fname))
+		if err != nil {
+			logrus.Fatalln(err)
+		}
+		defer file.Close()
+
+		scanner := bufio.NewScanner(file)
+		for scanner.Scan() {
+			line := scanner.Text()
+			if strings.HasPrefix(line, `#`) {
+				// ignore comment
+				continue
+			}
+			line = strings.TrimSpace(line)
+
+			var nmap *map[string]*net.IPNet
+			var err error
+
+			switch fname {
+			case `company-public.txt`:
+				nmap = &companyPubNetworks
+			case `discard.txt`:
+				nmap = &discardNetworks
+			case `employee-private.txt`:
+				nmap = &employeePrivNetworks
+			case `employee-public.txt`:
+				nmap = &employeePubNetworks
+			case `reserved.txt`:
+				nmap = &reservedPrivNetworks
+			}
+			if _, (*nmap)[line], err = net.ParseCIDR(line); err != nil {
+				logrus.Fatalln(err)
+			}
+		}
+
+		if err := scanner.Err(); err != nil {
+			logrus.Fatalln(err)
+		}
+	}
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix
