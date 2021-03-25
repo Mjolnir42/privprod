@@ -7,6 +7,16 @@
 
 package privacy // import "github.com/mjolnir42/privprod/internal/privacy"
 
+import (
+	"net"
+
+	"github.com/mjolnir42/erebos"
+)
+
+// Handlers must be set before Protector.Start is called for
+// the first time
+var Handlers map[int]erebos.Handler
+
 //
 var (
 	dataPad, pseudoKey   []byte

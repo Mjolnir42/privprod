@@ -23,10 +23,6 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
-// Handlers must be set before Protector.Start is called for
-// the first time
-var Handlers map[int]erebos.Handler
-
 // initialize Handlers map
 func init() {
 	Handlers = make(map[int]erebos.Handler)
