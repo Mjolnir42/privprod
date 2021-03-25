@@ -27,14 +27,6 @@ import (
 // the first time
 var Handlers map[int]erebos.Handler
 
-var dataPad, pseudoKey []byte
-
-var employeePrivNetworks map[string]*net.IPNet
-var employeePubNetworks map[string]*net.IPNet
-var companyPubNetworks map[string]*net.IPNet
-var reservedPrivNetworks map[string]*net.IPNet
-var discardNetworks map[string]*net.IPNet
-
 // initialize Handlers map
 func init() {
 	Handlers = make(map[int]erebos.Handler)
