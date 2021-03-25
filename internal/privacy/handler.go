@@ -8,15 +8,12 @@
 package privacy // import "github.com/mjolnir42/privprod/internal/privacy"
 
 import (
-	"bufio"
 	"encoding/hex"
 	"encoding/json"
 	"math/big"
 	"net"
 	"os"
-	"path/filepath"
 	"runtime"
-	"strings"
 
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/flowdata"
@@ -54,63 +51,6 @@ func Dispatch(msg erebos.Transport) error {
 
 	Handlers[int(handler.Int64())].InputChannel() <- &msg
 	return nil
-}
-
-func buildNetworkMaps() {
-	cfgPath := os.Getenv(`PRIVACY_NETWORKFILE_PATH`)
-
-	employeePrivNetworks = map[string]*net.IPNet{}
-	employeePubNetworks = map[string]*net.IPNet{}
-	companyPubNetworks = map[string]*net.IPNet{}
-	reservedPrivNetworks = map[string]*net.IPNet{}
-	discardNetworks = map[string]*net.IPNet{}
-
-	for _, fname := range []string{
-		`company-public.txt`,
-		`discard.txt`,
-		`employee-private.txt`,
-		`employee-public.txt`,
-		`reserved.txt`,
-	} {
-		file, err := os.Open(filepath.Join(cfgPath, fname))
-		if err != nil {
-			logrus.Fatalln(err)
-		}
-		defer file.Close()
-
-		scanner := bufio.NewScanner(file)
-		for scanner.Scan() {
-			line := scanner.Text()
-			if strings.HasPrefix(line, `#`) {
-				// ignore comment
-				continue
-			}
-			line = strings.TrimSpace(line)
-
-			var nmap *map[string]*net.IPNet
-			var err error
-
-			switch fname {
-			case `company-public.txt`:
-				nmap = &companyPubNetworks
-			case `discard.txt`:
-				nmap = &discardNetworks
-			case `employee-private.txt`:
-				nmap = &employeePrivNetworks
-			case `employee-public.txt`:
-				nmap = &employeePubNetworks
-			case `reserved.txt`:
-				nmap = &reservedPrivNetworks
-			}
-			if _, (*nmap)[line], err = net.ParseCIDR(line); err != nil {
-				logrus.Fatalln(err)
-			}
-		}
-
-		if err := scanner.Err(); err != nil {
-			logrus.Fatalln(err)
-		}
-	}
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix
