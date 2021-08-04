@@ -328,7 +328,6 @@ recordloop:
 
 		p.dispatch <- &sarama.ProducerMessage{
 			Topic: p.topic,
-			Key:   sarama.StringEncoder(`privacyprotector`),
 			Value: sarama.ByteEncoder(jbytes),
 		}
 
@@ -354,7 +353,6 @@ func (p *Protector) publishIOC(ioc flowdata.IOC) {
 
 	p.dispatch <- &sarama.ProducerMessage{
 		Topic: p.topicIOC,
-		Key:   sarama.StringEncoder(`privacyprotector`),
 		Value: sarama.ByteEncoder(jb),
 	}
 }
@@ -443,7 +441,6 @@ func (p *Protector) encrypt(input flowdata.Plaintext) {
 
 	p.dispatch <- &sarama.ProducerMessage{
 		Topic: p.topicENC,
-		Key:   sarama.StringEncoder(`privacyprotector`),
 		Value: sarama.ByteEncoder(jb),
 	}
 }
