@@ -171,8 +171,16 @@ func (p *Protector) InitCrypto() {
 		return
 	}
 
-	// TODO: publish encrypted version of session key
+	// publish encrypted version of session key
+	jb, err := json.Marshal(&key)
+	if p.assert(err) {
+		return
+	}
 
+	p.dispatch <- &sarama.ProducerMessage{
+		Topic: p.topicSKey,
+		Value: sarama.ByteEncoder(jb),
+	}
 }
 
 func (p *Protector) run() {
