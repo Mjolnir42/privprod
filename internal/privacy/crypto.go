@@ -10,11 +10,14 @@ package privacy
 import (
 	"bytes"
 	"crypto"
-	"encoding/base64"
+	"crypto/ed25519"
+	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/aead/ecdh"
+	"github.com/jorrizza/ed2curve25519"
 	"golang.org/x/crypto/argon2"
 	"golang.org/x/crypto/blake2b"
 )
@@ -113,19 +116,30 @@ func deriveKey(sessionPriv crypto.PrivateKey, lockPub crypto.PublicKey, salt []b
 	return argon2.IDKey(secret, derived, 1, 64*1024, 4, 32), nil
 }
 
-// decodePKString takes a base64 encoded Curve25519 public key and
-// returns a fully typed decoded version of the key
+// decodePKString takes a hex encoded Ed25519 public key and
+// returns a fully typed decoded Curve25519 version of the key
 func decodePKString(s string) (crypto.PublicKey, error) {
-	b, err := base64.StdEncoding.DecodeString(s)
+	// decode hex string
+	b, err := hex.DecodeString(
+		strings.ToLower(s),
+	)
 	if err != nil {
 		return nil, err
 	}
 	if len(b) != 32 {
 		return nil, fmt.Errorf("Invalid PublicKey length")
 	}
+	// cast to ed25519.PublicKey
+	ed := interface{}(b).(ed25519.PublicKey)
+
+	// convert Ed25519 to Curve25519
+	cv := ed2curve25519.Ed25519PublicKeyToCurve25519(ed)
+
+	// cast to crypto.PublicKey
 	buf := [32]uint8{}
-	copy(buf[:], b)
+	copy(buf[:], cv)
 	pk := interface{}(buf).(crypto.PublicKey)
+
 	// check the decoded value is a valid Curve25519 keypoint
 	if err := ecdh.X25519().Check(pk); err != nil {
 		return nil, err
