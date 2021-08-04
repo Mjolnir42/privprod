@@ -6,6 +6,7 @@ require (
 	github.com/Shopify/sarama v1.27.2
 	github.com/aead/ecdh v0.2.0
 	github.com/client9/reopen v1.0.0 // indirect
+	github.com/jorrizza/ed2curve25519 v0.1.0
 	github.com/mjolnir42/erebos v0.0.2
 	github.com/mjolnir42/flowdata v0.0.4
 	github.com/nahanni/go-ucl v0.0.0-20161122070711-3788fcf0dad8 // indirect
