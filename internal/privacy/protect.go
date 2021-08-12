@@ -139,7 +139,7 @@ func (p *Protector) InitCrypto() {
 	key.PublicKey = pubKeyBytes(pub)
 
 	// encrypt session key with unlock keys
-	for pk := range []crypto.PublicKey{unlockPKOne, unlockPKTwo} {
+	for _, pk := range []crypto.PublicKey{unlockPKOne, unlockPKTwo} {
 		slt, err := genKeyedSalt(pk, key.Salt)
 		if p.assert(err) {
 			return
