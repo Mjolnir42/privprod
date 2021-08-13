@@ -297,8 +297,10 @@ recordloop:
 			record.SrcAddress = fmtEmployeePub(hash.Sum(nil))
 		} else if isPublic(src) {
 			storeEncrypted = true
+			go func(ioc flowdata.IOC) {
+				p.publishIOC(ioc)
+			}(record.ToIOC(src.String()))
 
-			go p.publishIOC(record.ToIOC(src.String()))
 			hash, _ := blake2b.New256(pseudoKey)
 			hash.Write(dataPad)
 			hash.Write([]byte(src))
@@ -321,7 +323,9 @@ recordloop:
 			record.DstAddress = fmtEmployeePub(hash.Sum(nil))
 		} else if isPublic(dst) {
 			storeEncrypted = true
-			go p.publishIOC(record.ToIOC(dst.String()))
+			go func(ioc flowdata.IOC) {
+				p.publishIOC(ioc)
+			}(record.ToIOC(dst.String()))
 
 			hash, _ := blake2b.New256(pseudoKey)
 			hash.Write(dataPad)
