@@ -95,7 +95,7 @@ func runNSQConsumer(done chan struct{}) {
 	}))
 
 	// connect consumer to queue
-	c.ConnectToNSQD(`localhost:4150`)
+	c.ConnectToNSQD(`localhost:` + os.Getenv(`NSQD_TCP_PORT`))
 	<-done
 
 	c.Stop()
@@ -112,10 +112,10 @@ func runNSQD(done chan struct{}) {
 	logger := logrus.New()
 	logger.Out = ioutil.Discard
 	opts := nsqd.NewOptions()
-	opts.TCPAddress = `localhost:4150`
-	opts.HTTPAddress = `localhost:4151`
-	opts.HTTPSAddress = `localhost:4152`
-	opts.DataPath = `/tmp`
+	opts.TCPAddress = `localhost:` + os.Getenv(`NSQD_TCP_PORT`)
+	opts.HTTPAddress = `localhost:` + os.Getenv(`NSQD_HTTP_PORT`)
+	opts.HTTPSAddress = `localhost:` + os.Getenv(`NSQD_HTTPS_PORT`)
+	opts.DataPath = os.Getenv(`NSQD_DATA_PATH`)
 	opts.MemQueueSize = 8192 // number of messages
 	opts.MaxMsgSize = 131072 // bytes per message
 
