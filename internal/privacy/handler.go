@@ -16,7 +16,7 @@ import (
 	"runtime"
 
 	"github.com/mjolnir42/erebos"
-	"github.com/mjolnir42/flowdata"
+	"github.com/mjolnir42/privprod/internal/flowdata"
 	"github.com/sirupsen/logrus"
 )
 
