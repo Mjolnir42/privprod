@@ -331,6 +331,7 @@ recordloop:
 
 		jbytes, err := json.Marshal(&record)
 		if err != nil {
+			logrus.Errorln(`privacy.Protector.process/storeData: ` + err.Error())
 			continue recordloop
 		}
 
@@ -356,6 +357,7 @@ func (p *Protector) ShutdownChannel() chan struct{} {
 func (p *Protector) publishIOC(ioc flowdata.IOC) {
 	jb, err := json.Marshal(&ioc)
 	if p.assert(err) {
+		logrus.Errorln(`privacy.Protector.publishIOC: ` + err.Error())
 		return
 	}
 
@@ -444,6 +446,7 @@ func (p *Protector) encrypt(input flowdata.Plaintext) {
 	// publish encrypted record
 	jb, err = json.Marshal(&ctxt)
 	if p.assert(err) {
+		logrus.Errorln(`privacy.Protector.process/encrypt: ` + err.Error())
 		return
 	}
 
