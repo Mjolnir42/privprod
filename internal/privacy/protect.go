@@ -29,7 +29,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/aead/ecdh"
 	"github.com/mjolnir42/erebos"
-	"github.com/mjolnir42/flowdata"
+	"github.com/mjolnir42/privprod/internal/flowdata"
 	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/blake2b"
