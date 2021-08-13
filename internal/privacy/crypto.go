@@ -130,7 +130,8 @@ func decodePKString(s string) (crypto.PublicKey, error) {
 		return nil, fmt.Errorf("Invalid PublicKey length")
 	}
 	// cast to ed25519.PublicKey
-	ed := interface{}(b).(ed25519.PublicKey)
+	ed := make([]byte, ed25519.PublicKeySize)
+	copy(ed, b)
 
 	// convert Ed25519 to Curve25519
 	cv := ed2curve25519.Ed25519PublicKeyToCurve25519(ed)
