@@ -258,9 +258,9 @@ drainloop:
 
 func (p *Protector) process(msg *erebos.Transport) {
 	// flowdata decode
-	decoded := flowdata.Message{}
+	decoded := &flowdata.Message{}
 	if err := json.Unmarshal(msg.Value, decoded); err != nil {
-		logrus.Errorln(err)
+		logrus.Errorln(`privacy.Protector.process: ` + err.Error())
 		return
 	}
 

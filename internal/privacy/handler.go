@@ -35,9 +35,9 @@ func init() {
 // Dispatch implements erebos.Dispatcher
 func Dispatch(msg erebos.Transport) error {
 	// send all messages from the same Host to the same handler
-	decoded := flowdata.Message{}
+	decoded := &flowdata.Message{}
 	if err := json.Unmarshal(msg.Value, decoded); err != nil {
-		logrus.Errorln(err)
+		logrus.Errorln(`privacy.Dispatch(): ` + err.Error())
 		return err
 	}
 
