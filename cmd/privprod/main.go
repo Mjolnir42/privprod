@@ -77,6 +77,7 @@ drainloop:
 
 func runNSQConsumer(done chan struct{}) {
 	cfg := nsq.NewConfig()
+	cfg.Snappy = false
 	// topic: data, channel: main
 	c, err := nsq.NewConsumer(`data`, `main`, cfg)
 	if err != nil {
