@@ -10,8 +10,6 @@ require (
 	github.com/mjolnir42/erebos v0.0.2
 	github.com/mjolnir42/flowdata v0.0.4
 	github.com/nahanni/go-ucl v0.0.0-20161122070711-3788fcf0dad8 // indirect
-	github.com/nsqio/go-nsq v1.0.8
-	github.com/nsqio/nsq v1.2.0
 	github.com/samuel/go-zookeeper v0.0.0-20201211165307-7117e9ea2414 // indirect
 	github.com/satori/go.uuid v1.2.0
 	github.com/sirupsen/logrus v1.7.0

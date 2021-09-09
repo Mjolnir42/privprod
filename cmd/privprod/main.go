@@ -1,44 +1,59 @@
+/*-
+ * Copyright (c) 2021, Jörg Pernfuß
+ *
+ * Use of this source code is governed by a 2-clause BSD license
+ * that can be found in the LICENSE file.
+ */
+
 package main
 
 import (
-	"io/ioutil"
 	"os"
 	"os/signal"
 	"runtime"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/privprod/internal/privacy"
-	nsq "github.com/nsqio/go-nsq"
-	"github.com/nsqio/nsq/nsqd"
 	"github.com/sirupsen/logrus"
 )
 
 func main() {
-	stopNSQD := make(chan struct{})
-	stopNSQConsumer := make(chan struct{})
 	handlerDeath := make(chan error)
 	cancel := make(chan os.Signal, 1)
 	signal.Notify(cancel, os.Interrupt, syscall.SIGTERM)
 
 	// start application handlers
+	handlerLock := sync.WaitGroup{}
 	for i := 0; i < runtime.NumCPU(); i++ {
+		handlerLock.Add(1)
 		h := privacy.Protector{
 			Num:      i,
-			Input:    make(chan *erebos.Transport, 4),
+			Input:    make(chan *erebos.Transport, 16),
 			Shutdown: make(chan struct{}),
 			Death:    handlerDeath,
 		}
 		privacy.Handlers[i] = &h
 		go func() {
 			h.Start()
+			handlerLock.Done()
 		}()
 	}
 
-	// start queue daemon
-	go runNSQD(stopNSQD)
-	go runNSQConsumer(stopNSQConsumer)
+	addr := os.Getenv(`PRIVACY_LISTEN_ADDRESS`)
+	switch addr {
+	case ``:
+		addr = `localhost:4150`
+	default:
+	}
+
+	server, err := NewTCPServer(addr)
+	if err != nil {
+		logrus.Errorln(err)
+		goto shutdown
+	}
 
 	// the main loop
 runloop:
@@ -46,22 +61,47 @@ runloop:
 		select {
 		case <-cancel:
 			break runloop
+		case err := <-server.Err():
+			if err != nil {
+				logrus.Errorln(`TCPServer:`, err)
+			}
 		case err := <-handlerDeath:
 			if err != nil {
-				logrus.Errorln(err)
+				logrus.Errorln(`Privacy:`, err)
 			}
 			break runloop
 		}
 	}
 
-	// close all handlers
-	close(stopNSQConsumer)
-	close(stopNSQD)
+shutdown:
+	// stop tcp server, read the error channel until all connections
+	// have finished
+	ch := server.Stop()
+	for {
+		select {
+		case err := <-ch:
+			if err != nil {
+				logrus.Errorln(`TCPServer:`, err)
+				continue
+			}
+			break
+		}
+	}
+
+	// close all handlers input channels, no new messages
 	for i := range privacy.Handlers {
-		close(privacy.Handlers[i].ShutdownChannel())
 		close(privacy.Handlers[i].InputChannel())
 	}
 
+	// close all handlers shutdown channels, switch to drain mode
+	for i := range privacy.Handlers {
+		close(privacy.Handlers[i].ShutdownChannel())
+	}
+
+	// wait for handler shutdown
+	handlerLock.Wait()
+
+	// fetch final error messages
 drainloop:
 	for {
 		select {
@@ -73,59 +113,6 @@ drainloop:
 			break drainloop
 		}
 	}
-}
-
-func runNSQConsumer(done chan struct{}) {
-	cfg := nsq.NewConfig()
-	// topic: data, channel: main
-	c, err := nsq.NewConsumer(`data`, `main`, cfg)
-	if err != nil {
-		logrus.Fatalln(err)
-	}
-
-	// receive messages and hand off to privacy library
-	c.AddHandler(nsq.HandlerFunc(func(m *nsq.Message) error {
-		logrus.Infoln(string(m.Body))
-		go privacy.Dispatch(erebos.Transport{
-			Value: m.Body,
-		})
-		//
-		return nil
-	}))
-
-	// connect consumer to queue
-	c.ConnectToNSQD(`localhost:4150`)
-	<-done
-
-	c.Stop()
-	select {
-	case <-c.StopChan:
-		// unblock once clean consumer stop is complete
-		logrus.Infoln(`Clean consumer shutdown complete`)
-	case <-time.After(time.Second * 8):
-		logrus.Errorln(`Forced dirty consumer shutdown after 8s timeout`)
-	}
-}
-
-func runNSQD(done chan struct{}) {
-	logger := logrus.New()
-	logger.Out = ioutil.Discard
-	opts := nsqd.NewOptions()
-	opts.TCPAddress = `localhost:4150`
-	opts.HTTPAddress = `localhost:4151`
-	opts.HTTPSAddress = `localhost:4152`
-	opts.DataPath = `/tmp`
-	opts.MemQueueSize = 8192 // number of messages
-	opts.MaxMsgSize = 131072 // bytes per message
-
-	nsqd, err := nsqd.New(opts)
-	if err != nil {
-		logrus.Fatalln(err)
-	}
-	nsqd.Main()
-
-	<-done
-	nsqd.Exit()
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix
