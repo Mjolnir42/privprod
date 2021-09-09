@@ -18,6 +18,7 @@ import (
 
 	"github.com/mjolnir42/erebos"
 	"github.com/mjolnir42/privprod/internal/privacy"
+	"github.com/sirupsen/logrus"
 )
 
 type TCPServer struct {
@@ -60,6 +61,9 @@ func (s *TCPServer) serve() {
 		} else {
 			s.wg.Add(1)
 			go func() {
+				logrus.Infof("Accepted connection from: %s\n",
+					conn.RemoteAddr().String(),
+				)
 				s.handleConnection(conn)
 				s.wg.Done()
 			}()
@@ -100,6 +104,9 @@ ReadLoop:
 				// been closed yet
 				select {
 				case <-s.quit:
+					logrus.Infof("Forcing close on connection from: %s\n",
+						conn.RemoteAddr().String(),
+					)
 				default:
 					conn.SetDeadline(time.Now().Add(400 * time.Millisecond))
 				}

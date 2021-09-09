@@ -36,10 +36,12 @@ func main() {
 			Death:    handlerDeath,
 		}
 		privacy.Handlers[i] = &h
-		go func() {
+		go func(num int) {
+			logrus.Infof("Running handler privacy.Protector %d\n", num)
 			h.Start()
 			handlerLock.Done()
-		}()
+			logrus.Infof("Handler finished: privacy.Protector %d\n", num)
+		}(i)
 	}
 
 	addr := os.Getenv(`PRIVACY_LISTEN_ADDRESS`)
@@ -54,12 +56,15 @@ func main() {
 		logrus.Errorln(err)
 		goto shutdown
 	}
+	logrus.Infof("Started TCP server at %s", addr)
 
 	// the main loop
+	logrus.Infoln("Running main event loop")
 runloop:
 	for {
 		select {
 		case <-cancel:
+			logrus.Infoln("Received interrupt request, exiting")
 			break runloop
 		case err := <-server.Err():
 			if err != nil {
@@ -69,6 +74,7 @@ runloop:
 			if err != nil {
 				logrus.Errorln(`Privacy:`, err)
 			}
+			logrus.Infoln("Handler died, exiting")
 			break runloop
 		}
 	}
@@ -76,6 +82,7 @@ runloop:
 shutdown:
 	// stop tcp server, read the error channel until all connections
 	// have finished
+	logrus.Infoln("Shutting down TCP server, waiting for clients....")
 	ch := server.Stop()
 serverGrace:
 	for {
@@ -88,6 +95,7 @@ serverGrace:
 			break serverGrace
 		}
 	}
+	logrus.Infoln("All TCP server connections closed")
 
 	// close all handlers input channels, no new messages
 	for i := range privacy.Handlers {
@@ -103,6 +111,7 @@ serverGrace:
 	handlerLock.Wait()
 
 	// fetch final error messages
+	logrus.Infoln("Draining final handler error messages")
 drainloop:
 	for {
 		select {
