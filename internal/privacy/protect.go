@@ -288,6 +288,11 @@ func (p *Protector) process(msg *erebos.Transport) {
 
 recordloop:
 	for record := range decoded.Convert() {
+		if record.ExpPID != 0 && record.StartMilli.IsZero() && record.EndMilli.IsZero() {
+			// this is an in-band asset discovery information to publish the exporting
+			// process ID
+			continue recordloop
+		}
 		storeEncrypted := false
 
 		// copy of the struct must be done after the RecordID has been
