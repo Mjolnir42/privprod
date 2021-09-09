@@ -15,6 +15,7 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"crypto/tls"
 	"encoding/base64"
 	"encoding/gob"
 	"encoding/json"
@@ -58,6 +59,14 @@ func (p *Protector) Start() {
 		return
 	}
 
+	var useTLS bool = false
+	switch os.Getenv(`KAFKA_USE_TLS`) {
+		case `true`:
+			useTLS = true
+		default:
+			useTLS = false
+		}
+
 	p.topic = os.Getenv(`KAFKA_PRODUCER_TOPIC_DATA`)
 	p.topicIOC = os.Getenv(`KAFKA_PRODUCER_TOPIC_IOC`)
 	p.topicSKey = os.Getenv(`KAFKA_PRODUCER_TOPIC_SESSION`)
@@ -66,6 +75,19 @@ func (p *Protector) Start() {
 	config := sarama.NewConfig()
 	config.Net.KeepAlive = 3 * time.Second
 	config.Producer.RequiredAcks = sarama.WaitForLocal
+
+	if useTLS {
+		config.Net.SASL.User = os.Getenv(`KAFKA_SASL_USER`)
+		config.Net.SASL.Password = os.Getenv(`KAFKA_SASL_PASSWD`)
+		config.Net.SASL.Handshake = true
+		config.Net.SASL.Enable = true
+		config.Net.TLS.Enable = true
+		tlsConfig := &tls.Config{
+			InsecureSkipVerify: true,
+			ClientAuth: 0,
+		}
+		config.Net.TLS.Config = tlsConfig
+	}
 
 	config.Producer.Return.Successes = true
 	config.Producer.Return.Errors = true
