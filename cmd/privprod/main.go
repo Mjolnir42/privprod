@@ -107,9 +107,6 @@ serverGrace:
 		close(privacy.Handlers[i].ShutdownChannel())
 	}
 
-	// wait for handler shutdown
-	handlerLock.Wait()
-
 	// fetch final error messages
 	logrus.Infoln("Draining final handler error messages")
 drainloop:
@@ -119,10 +116,15 @@ drainloop:
 			if err != nil {
 				logrus.Errorln(err)
 			}
-		case <-time.After(time.Millisecond * 10):
+		case <-time.After(time.Millisecond * 100):
 			break drainloop
 		}
 	}
+
+	// wait for handler shutdown
+	logrus.Infoln("Waiting for handler shutdowns.")
+	handlerLock.Wait()
+
 }
 
 // vim: ts=4 sw=4 sts=4 noet fenc=utf-8 ffs=unix
