@@ -29,7 +29,7 @@ import (
 	"github.com/Shopify/sarama"
 	"github.com/aead/ecdh"
 	"github.com/mjolnir42/erebos"
-	"github.com/mjolnir42/flowdata"
+	"github.com/mjolnir42/privprod/internal/flowdata"
 	"github.com/satori/go.uuid"
 	"github.com/sirupsen/logrus"
 	"golang.org/x/crypto/blake2b"
@@ -139,7 +139,7 @@ func (p *Protector) InitCrypto() {
 	key.PublicKey = pubKeyBytes(pub)
 
 	// encrypt session key with unlock keys
-	for pk := range []crypto.PublicKey{unlockPKOne, unlockPKTwo} {
+	for _, pk := range []crypto.PublicKey{unlockPKOne, unlockPKTwo} {
 		slt, err := genKeyedSalt(pk, key.Salt)
 		if p.assert(err) {
 			return
@@ -258,9 +258,9 @@ drainloop:
 
 func (p *Protector) process(msg *erebos.Transport) {
 	// flowdata decode
-	decoded := flowdata.Message{}
+	decoded := &flowdata.Message{}
 	if err := json.Unmarshal(msg.Value, decoded); err != nil {
-		logrus.Errorln(err)
+		logrus.Errorln(`privacy.Protector.process: ` + err.Error())
 		return
 	}
 
@@ -297,8 +297,10 @@ recordloop:
 			record.SrcAddress = fmtEmployeePub(hash.Sum(nil))
 		} else if isPublic(src) {
 			storeEncrypted = true
+			go func(ioc flowdata.IOC) {
+				p.publishIOC(ioc)
+			}(record.ToIOC(src.String()))
 
-			go p.publishIOC(record.ToIOC(src.String()))
 			hash, _ := blake2b.New256(pseudoKey)
 			hash.Write(dataPad)
 			hash.Write([]byte(src))
@@ -321,7 +323,9 @@ recordloop:
 			record.DstAddress = fmtEmployeePub(hash.Sum(nil))
 		} else if isPublic(dst) {
 			storeEncrypted = true
-			go p.publishIOC(record.ToIOC(dst.String()))
+			go func(ioc flowdata.IOC) {
+				p.publishIOC(ioc)
+			}(record.ToIOC(dst.String()))
 
 			hash, _ := blake2b.New256(pseudoKey)
 			hash.Write(dataPad)
@@ -331,6 +335,7 @@ recordloop:
 
 		jbytes, err := json.Marshal(&record)
 		if err != nil {
+			logrus.Errorln(`privacy.Protector.process/storeData: ` + err.Error())
 			continue recordloop
 		}
 
@@ -356,6 +361,7 @@ func (p *Protector) ShutdownChannel() chan struct{} {
 func (p *Protector) publishIOC(ioc flowdata.IOC) {
 	jb, err := json.Marshal(&ioc)
 	if p.assert(err) {
+		logrus.Errorln(`privacy.Protector.publishIOC: ` + err.Error())
 		return
 	}
 
@@ -444,6 +450,7 @@ func (p *Protector) encrypt(input flowdata.Plaintext) {
 	// publish encrypted record
 	jb, err = json.Marshal(&ctxt)
 	if p.assert(err) {
+		logrus.Errorln(`privacy.Protector.process/encrypt: ` + err.Error())
 		return
 	}
 
