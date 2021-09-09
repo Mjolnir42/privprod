@@ -77,14 +77,15 @@ shutdown:
 	// stop tcp server, read the error channel until all connections
 	// have finished
 	ch := server.Stop()
+serverGrace:
 	for {
 		select {
 		case err := <-ch:
 			if err != nil {
 				logrus.Errorln(`TCPServer:`, err)
-				continue
+				continue serverGrace
 			}
-			break
+			break serverGrace
 		}
 	}
 
