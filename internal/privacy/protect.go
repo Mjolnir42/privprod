@@ -61,11 +61,11 @@ func (p *Protector) Start() {
 
 	var useTLS bool = false
 	switch os.Getenv(`KAFKA_USE_TLS`) {
-		case `true`:
-			useTLS = true
-		default:
-			useTLS = false
-		}
+	case `true`:
+		useTLS = true
+	default:
+		useTLS = false
+	}
 
 	p.topic = os.Getenv(`KAFKA_PRODUCER_TOPIC_DATA`)
 	p.topicIOC = os.Getenv(`KAFKA_PRODUCER_TOPIC_IOC`)
@@ -84,7 +84,7 @@ func (p *Protector) Start() {
 		config.Net.TLS.Enable = true
 		tlsConfig := &tls.Config{
 			InsecureSkipVerify: true,
-			ClientAuth: 0,
+			ClientAuth:         0,
 		}
 		config.Net.TLS.Config = tlsConfig
 	}
