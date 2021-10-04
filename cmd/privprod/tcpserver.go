@@ -97,7 +97,11 @@ ReadLoop:
 
 			for scanner.Scan() {
 				go func(data []byte) {
-					privacy.Dispatch(erebos.Transport{Value: data})
+					// panic: JSON decoder out of sync - data
+					// changing underfoot?
+					datacopy := make([]byte, len(data))
+					copy(datacopy, data)
+					privacy.Dispatch(erebos.Transport{Value: datacopy})
 				}(scanner.Bytes())
 
 				// refresh deadline after a line has been read and s.quit has not
