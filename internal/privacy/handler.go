@@ -26,7 +26,7 @@ func init() {
 
 	// BUG: datapad should be read from Zookeeper
 	dataPad, _ = hex.DecodeString(os.Getenv(`PRIVACY_DATAPAD`))
-	// BUG: pseudokey does not rotate
+	// TODO: daily rotate pseudokey
 	pseudoKey, _ = hex.DecodeString(os.Getenv(`PRIVACY_DAILY_KEY`))
 
 	buildNetworkMaps()

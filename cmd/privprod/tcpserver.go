@@ -48,12 +48,14 @@ func (s *TCPServer) Err() chan error {
 
 func (s *TCPServer) serve() {
 	defer s.wg.Done()
+	logrus.Infoln(`TCPserver: start serving clients`)
 
 	for {
 		conn, err := s.listener.Accept()
 		if err != nil {
 			select {
 			case <-s.quit:
+				logrus.Infoln(`TCPserver: graceful stop of main serve loop`)
 				return
 			default:
 				s.err <- err
@@ -61,10 +63,14 @@ func (s *TCPServer) serve() {
 		} else {
 			s.wg.Add(1)
 			go func() {
-				logrus.Infof("Accepted connection from: %s\n",
-					conn.RemoteAddr().String(),
+				remote := conn.RemoteAddr().String()
+				logrus.Infof("TCPserver: accepted connection from: %s\n",
+					remote,
 				)
 				s.handleConnection(conn)
+				logrus.Infof("TCPserver: finished connection from: %s\n",
+					remote,
+				)
 				s.wg.Done()
 			}()
 		}
@@ -97,8 +103,8 @@ ReadLoop:
 
 			for scanner.Scan() {
 				go func(data []byte) {
-					// panic: JSON decoder out of sync - data
-					// changing underfoot?
+					// explicit copy to avoid this panic
+					// panic: JSON decoder out of sync - data changing underfoot?
 					datacopy := make([]byte, len(data))
 					copy(datacopy, data)
 					privacy.Dispatch(erebos.Transport{Value: datacopy})
@@ -108,7 +114,7 @@ ReadLoop:
 				// been closed yet
 				select {
 				case <-s.quit:
-					logrus.Infof("Forcing close on connection from: %s\n",
+					logrus.Infof("TCPserver: forcing close on connection from: %s\n",
 						conn.RemoteAddr().String(),
 					)
 				default:

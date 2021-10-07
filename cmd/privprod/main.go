@@ -37,10 +37,10 @@ func main() {
 		}
 		privacy.Handlers[i] = &h
 		go func(num int) {
-			logrus.Infof("Running handler privacy.Protector %d\n", num)
+			logrus.Infof("Main: running handler privacy.Protector %d\n", num)
 			h.Start()
 			handlerLock.Done()
-			logrus.Infof("Handler finished: privacy.Protector %d\n", num)
+			logrus.Infof("Main: handler finished: privacy.Protector %d\n", num)
 		}(i)
 	}
 
@@ -50,21 +50,22 @@ func main() {
 		addr = `localhost:4150`
 	default:
 	}
+	logrus.Infof("Main: configured tcpserver to listen on: %s\n", addr)
 
 	server, err := NewTCPServer(addr)
 	if err != nil {
 		logrus.Errorln(err)
 		goto shutdown
 	}
-	logrus.Infof("Started TCP server at %s", addr)
+	logrus.Infof("Main: started TCP server at %s", addr)
 
 	// the main loop
-	logrus.Infoln("Running main event loop")
+	logrus.Infoln("Main: running main event loop")
 runloop:
 	for {
 		select {
 		case <-cancel:
-			logrus.Infoln("Received interrupt request, exiting")
+			logrus.Infoln("Main: received interrupt request, exiting")
 			break runloop
 		case err := <-server.Err():
 			if err != nil {
@@ -74,7 +75,7 @@ runloop:
 			if err != nil {
 				logrus.Errorln(`Privacy:`, err)
 			}
-			logrus.Infoln("Handler died, exiting")
+			logrus.Infoln("Main: handler died, forced exiting")
 			break runloop
 		}
 	}
@@ -82,7 +83,7 @@ runloop:
 shutdown:
 	// stop tcp server, read the error channel until all connections
 	// have finished
-	logrus.Infoln("Shutting down TCP server, waiting for clients....")
+	logrus.Infoln("Main: shutting down TCP server, waiting for clients....")
 	ch := server.Stop()
 serverGrace:
 	for {
@@ -95,7 +96,7 @@ serverGrace:
 			break serverGrace
 		}
 	}
-	logrus.Infoln("All TCP server connections closed")
+	logrus.Infoln("Main: all TCP server connections closed")
 
 	// close all handlers input channels, no new messages
 	for i := range privacy.Handlers {
@@ -108,7 +109,7 @@ serverGrace:
 	}
 
 	// fetch final error messages
-	logrus.Infoln("Draining final handler error messages")
+	logrus.Infoln("Main: draining final handler error messages")
 drainloop:
 	for {
 		select {
@@ -122,7 +123,7 @@ drainloop:
 	}
 
 	// wait for handler shutdown
-	logrus.Infoln("Waiting for handler shutdowns.")
+	logrus.Infoln("Main: waiting for handler shutdowns.")
 	handlerLock.Wait()
 
 }

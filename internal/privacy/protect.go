@@ -66,11 +66,16 @@ func (p *Protector) Start() {
 	default:
 		useTLS = false
 	}
+	logrus.Infof("Privacy: configured kafka to use TLS: %t\n", useTLS)
 
 	p.topic = os.Getenv(`KAFKA_PRODUCER_TOPIC_DATA`)
+	logrus.Infof("Privacy: configured kafka topic for main data export: %s\n", p.topic)
 	p.topicIOC = os.Getenv(`KAFKA_PRODUCER_TOPIC_IOC`)
+	logrus.Infof("Privacy: configured kafka topic for IOC export: %s\n", p.topicIOC)
 	p.topicSKey = os.Getenv(`KAFKA_PRODUCER_TOPIC_SESSION`)
+	logrus.Infof("Privacy: configured kafka topic for session key export: %s\n", p.topicSKey)
 	p.topicENC = os.Getenv(`KAFKA_PRODUCER_TOPIC_ENCRYPTED`)
+	logrus.Infof("Privacy: configured kafka topic for encrypted data: %s\n", p.topicENC)
 
 	config := sarama.NewConfig()
 	config.Net.KeepAlive = 3 * time.Second
@@ -87,6 +92,21 @@ func (p *Protector) Start() {
 			ClientAuth:         0,
 		}
 		config.Net.TLS.Config = tlsConfig
+
+		switch config.Net.SASL.User {
+		case ``:
+			logrus.Infoln("Privacy: no kafka SASL user configured")
+		default:
+			logrus.Infof("Privacy: configured kafka SASL user: %s\n", config.Net.SASL.User)
+		}
+		switch config.Net.SASL.Password {
+		case ``:
+			logrus.Infoln("Privacy: no kafka SASL password configured")
+		default:
+			logrus.Infoln("Privacy: configured kafka SASL password detected")
+		}
+	} else {
+		logrus.Infoln("Privacy: disabled kafka authentication without TLS")
 	}
 
 	config.Producer.Return.Successes = true
@@ -96,6 +116,7 @@ func (p *Protector) Start() {
 	config.ClientID = `privacyprotector`
 
 	brokers := os.Getenv(`KAFKA_BROKER_PEERS`)
+	logrus.Infof("Privacy: configured kafka bootstrap peers: %s\n", brokers)
 	var err error
 	p.producer, err = sarama.NewAsyncProducer(strings.Split(brokers, `,`), config)
 	if p.assert(err) {
