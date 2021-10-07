@@ -61,7 +61,7 @@ func (p *Protector) Start() {
 
 	var useTLS bool = false
 	switch os.Getenv(`KAFKA_USE_TLS`) {
-	case `true`:
+	case `true`, `TRUE`, `yes`, `YES`, `1`:
 		useTLS = true
 	default:
 		useTLS = false
