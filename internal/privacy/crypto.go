@@ -13,7 +13,6 @@ import (
 	"crypto/ed25519"
 	"encoding/hex"
 	"errors"
-	"fmt"
 	"strings"
 
 	"github.com/aead/ecdh"
