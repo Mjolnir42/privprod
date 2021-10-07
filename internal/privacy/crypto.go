@@ -130,7 +130,7 @@ func decodePKString(s string) (crypto.PublicKey, error) {
 	if err != nil {
 		return nil, err
 	}
-	if len(b) != 32 {
+	if len(b) != keyLenBytes {
 		return nil, ErrInvalidPubKeyFormat
 	}
 	// cast to ed25519.PublicKey
@@ -141,7 +141,7 @@ func decodePKString(s string) (crypto.PublicKey, error) {
 	cv := ed2curve25519.Ed25519PublicKeyToCurve25519(ed)
 
 	// cast to crypto.PublicKey
-	buf := [32]uint8{}
+	buf := [keyLenBytes]uint8{}
 	copy(buf[:], cv)
 	pk := interface{}(buf).(crypto.PublicKey)
 
