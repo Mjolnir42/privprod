@@ -20,7 +20,14 @@ import (
 	"github.com/sirupsen/logrus"
 )
 
+var (
+	// this version string is set by the build script
+	privprodVersion string
+)
+
 func main() {
+	logrus.Infof("Starting privprod version: %s\n", privprodVersion)
+
 	handlerDeath := make(chan error)
 	cancel := make(chan os.Signal, 1)
 	signal.Notify(cancel, os.Interrupt, syscall.SIGTERM)
