@@ -96,7 +96,7 @@ ReadLoop:
 		case <-s.quit:
 			break ReadLoop
 		default:
-			conn.SetDeadline(time.Now().Add(400 * time.Millisecond))
+			conn.SetDeadline(time.Now().Add(750 * time.Millisecond))
 
 			scanner := bufio.NewScanner(conn)
 			scanner.Split(bufio.ScanLines)
@@ -118,7 +118,7 @@ ReadLoop:
 						conn.RemoteAddr().String(),
 					)
 				default:
-					conn.SetDeadline(time.Now().Add(400 * time.Millisecond))
+					conn.SetDeadline(time.Now().Add(750 * time.Millisecond))
 				}
 			}
 
