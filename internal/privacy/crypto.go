@@ -26,6 +26,10 @@ var (
 	// ErrInvalidBlockSize indicates hash blocksize <= 0
 	ErrInvalidBlockSize = errors.New("invalid blocksize")
 
+	// ErrInvalidPubKeyFormat indicates an error processing what is
+	// supposed to be a hex encoded Ed25519 public key
+	ErrInvalidPubKeyFormat = errors.New("Invalid PublicKey length/format")
+
 	// ErrInvalidPKCS7Data indicates bad input to PKCS7 pad or unpad
 	ErrInvalidPKCS7Data = errors.New("invalid PKCS7 data (empty or not padded)")
 
@@ -127,7 +131,7 @@ func decodePKString(s string) (crypto.PublicKey, error) {
 		return nil, err
 	}
 	if len(b) != 32 {
-		return nil, fmt.Errorf("Invalid PublicKey length")
+		return nil, ErrInvalidPubKeyFormat
 	}
 	// cast to ed25519.PublicKey
 	ed := make([]byte, ed25519.PublicKeySize)
