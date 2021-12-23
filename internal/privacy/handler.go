@@ -38,7 +38,7 @@ func Dispatch(msg erebos.Transport) error {
 	decoded := &flowdata.Message{}
 	if err := json.Unmarshal(msg.Value, decoded); err != nil {
 		logrus.Errorln(`privacy.Dispatch(): ` + err.Error())
-		logrus.Debugln(msg.Value)
+		logrus.Debugln(`Corrupt data: `, msg.Value)
 		return err
 	}
 
