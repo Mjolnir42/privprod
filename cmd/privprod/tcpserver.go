@@ -98,7 +98,9 @@ ReadLoop:
 		default:
 			conn.SetDeadline(time.Now().Add(750 * time.Millisecond))
 
+			buf := make([]byte, 262144, 262144)
 			scanner := bufio.NewScanner(conn)
+			scanner.Buffer(buf, 262143)
 			scanner.Split(bufio.ScanLines)
 
 			for scanner.Scan() {
