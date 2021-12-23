@@ -26,6 +26,20 @@ var (
 )
 
 func main() {
+	var loglevel logrus.Level
+	var err error
+	lvl := os.Getenv(`PRIVACY_LOGLEVEL`)
+	switch lvl {
+	case ``:
+		loglevel = logrus.InfoLevel
+	default:
+		loglevel, err = logrus.ParseLevel(lvl)
+		if err != nil {
+			logrus.Errorf("Error parsing loglevel: %s\n", err.Error())
+			loglevel = logrus.InfoLevel
+		}
+	}
+	logrus.SetLevel(loglevel)
 	logrus.Infof("Starting privprod version: %s\n", privprodVersion)
 
 	handlerDeath := make(chan error)
