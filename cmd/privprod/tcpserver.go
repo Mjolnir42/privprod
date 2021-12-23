@@ -104,13 +104,14 @@ ReadLoop:
 			scanner.Split(bufio.ScanLines)
 
 			for scanner.Scan() {
-				go func(data []byte) {
-					// explicit copy to avoid this panic
-					// panic: JSON decoder out of sync - data changing underfoot?
-					datacopy := make([]byte, len(data))
-					copy(datacopy, data)
-					privacy.Dispatch(erebos.Transport{Value: datacopy})
-				}(scanner.Bytes())
+				// explicit copy to avoid this panic
+				// panic: JSON decoder out of sync - data changing underfoot?
+				token := make([]byte, 262144)
+				i := copy(token, scanner.Bytes())
+
+				go func() {
+					privacy.Dispatch(erebos.Transport{Value: token[:i]})
+				}()
 
 				// refresh deadline after a line has been read and s.quit has not
 				// been closed yet
