@@ -117,6 +117,7 @@ ReadLoop:
 					logrus.Infof("TCPserver: forcing close on connection from: %s\n",
 						conn.RemoteAddr().String(),
 					)
+					break ReadLoop
 				default:
 					conn.SetDeadline(time.Now().Add(750 * time.Millisecond))
 				}
